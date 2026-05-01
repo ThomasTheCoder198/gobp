@@ -22,6 +22,9 @@ install:
 	go install $(LDFLAGS) ./cmd/gobp
 
 release:
-	@if [ -z "$(TAG)" ]; then echo "Usage: make release TAG=v0.1.0"; exit 1; fi
+	@if [ -z "$(TAG)" ]; then echo "Usage: make release TAG=v0.2.0"; exit 1; fi
 	git tag -a $(TAG) -m "Release $(TAG)"
 	git push origin $(TAG)
+
+release-local:
+	goreleaser release --snapshot --clean
