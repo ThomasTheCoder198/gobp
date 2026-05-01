@@ -1,0 +1,57 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/internal/server/middleware"
+	"{{ .Module }}/log"
+	"{{ .Module }}/pkg/config"
+)
+
+func main() {
+	cfg := config.MustLoad()
+
+	logger, err := log.New(log.Config{Level: cfg.Log.Level, Encoding: cfg.Log.Encoding})
+	if err != nil {
+		panic(fmt.Errorf("init logger: %w", err))
+	}
+	defer func() { _ = logger.Sync() }()
+
+	app := InitializeApp(logger, cfg)
+
+	f := fiber.New(fiber.Config{
+		ReadTimeout:  time.Duration(cfg.Server.ReadTimeoutSec) * time.Second,
+		WriteTimeout: time.Duration(cfg.Server.WriteTimeoutSec) * time.Second,
+		ErrorHandler: middleware.ErrorHandler(logger),
+	})
+	NewServer(app, logger).RegisterRoutes(f)
+
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		logger.Info("server starting", zap.String("addr", addr))
+		if err := f.Listen(addr); err != nil {
+			logger.Fatal("server failed", zap.Error(err))
+		}
+	}()
+
+	<-ctx.Done()
+	logger.Info("shutdown initiated")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = shutdownCtx
+	if err := f.Shutdown(); err != nil {
+		logger.Error("graceful shutdown failed", zap.Error(err))
+	}
+}

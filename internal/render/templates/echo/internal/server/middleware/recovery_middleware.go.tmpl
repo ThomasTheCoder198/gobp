@@ -1,0 +1,34 @@
+package middleware
+
+import (
+	"fmt"
+	"runtime"
+
+	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
+
+	apperrors "{{ .Module }}/errors"
+)
+
+// Recovery returns middleware that converts panics into ErrInternal so the
+// error handler renders a structured JSON response.
+func Recovery(logger *zap.Logger) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					traceID, _ := c.Get("trace_id").(string)
+					buf := make([]byte, 2048)
+					n := runtime.Stack(buf, false)
+					logger.Error("panic recovered",
+						zap.Any("cause", r),
+						zap.String("trace_id", traceID),
+						zap.String("stack", string(buf[:n])),
+					)
+					err = fmt.Errorf("%w: %v", apperrors.ErrInternal, r)
+				}
+			}()
+			return next(c)
+		}
+	}
+}

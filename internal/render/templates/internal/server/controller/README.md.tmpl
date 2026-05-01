@@ -1,0 +1,9 @@
+# internal/server/controller
+
+HTTP controllers (route handlers) for `{{ .Name }}`.
+
+Controllers are responsible for request binding, input validation, calling the service layer, and shaping the HTTP response. Business logic must not live here.
+
+- `health_controller.go` — `GET /healthz` readiness probe
+
+**Convention**: controller structs end with `Controller`; their constructors are `NewXxxController(service XxxService)`.

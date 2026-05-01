@@ -1,0 +1,63 @@
+package utils
+
+const (
+	DefaultPage     = 1
+	DefaultPageSize = 20
+	MaxPageSize     = 100
+)
+
+// PaginationQuery holds the page cursor received from the client.
+type PaginationQuery struct {
+	Page     int `json:"page"`
+	PageSize int `json:"page_size"`
+}
+
+// Offset returns the SQL OFFSET value for the current page.
+func (p PaginationQuery) Offset() int {
+	if p.Page <= 1 {
+		return 0
+	}
+	return (p.Page - 1) * p.Limit()
+}
+
+// Limit returns the normalised page size, clamped to [1, MaxPageSize].
+func (p PaginationQuery) Limit() int {
+	if p.PageSize <= 0 {
+		return DefaultPageSize
+	}
+	if p.PageSize > MaxPageSize {
+		return MaxPageSize
+	}
+	return p.PageSize
+}
+
+// PaginationMeta is included in paginated JSON responses.
+type PaginationMeta struct {
+	Page       int  `json:"page"`
+	PageSize   int  `json:"page_size"`
+	Total      int  `json:"total"`
+	TotalPages int  `json:"total_pages"`
+	HasNext    bool `json:"has_next"`
+	HasPrev    bool `json:"has_prev"`
+}
+
+// NewPaginationMeta builds meta from the query and the total row count.
+func NewPaginationMeta(q PaginationQuery, total int) PaginationMeta {
+	limit := q.Limit()
+	page := q.Page
+	if page <= 0 {
+		page = DefaultPage
+	}
+	totalPages := 0
+	if limit > 0 {
+		totalPages = (total + limit - 1) / limit
+	}
+	return PaginationMeta{
+		Page:       page,
+		PageSize:   limit,
+		Total:      total,
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
+	}
+}

@@ -1,0 +1,37 @@
+// Package mysql exposes a gorm-backed MySQL connection.
+package mysql
+
+import (
+	"context"
+	"fmt"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// DSN returns the gorm-mysql DSN.
+func DSN(cfg config.MySQLConfig) string {
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database,
+	)
+}
+
+// New opens the connection and pings it once.
+func New(ctx context.Context, cfg config.MySQLConfig) (*gorm.DB, error) {
+	db, err := gorm.Open(mysql.Open(DSN(cfg)), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("open: %w", err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("sqldb: %w", err)
+	}
+	if err := sqlDB.PingContext(ctx); err != nil {
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+	return db, nil
+}

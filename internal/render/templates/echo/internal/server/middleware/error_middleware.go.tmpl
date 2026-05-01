@@ -1,0 +1,55 @@
+package middleware
+
+import (
+	stdlibErrors "errors"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
+
+	apperrors "{{ .Module }}/errors"
+)
+
+// ErrorHandler returns an echo.HTTPErrorHandler that maps AppError values
+// into structured JSON responses.
+func ErrorHandler(logger *zap.Logger) func(err error, c echo.Context) {
+	return func(err error, c echo.Context) {
+		if c.Response().Committed {
+			return
+		}
+
+		traceID, _ := c.Get("trace_id").(string)
+
+		var ae apperrors.AppError
+		if stdlibErrors.As(err, &ae) {
+			_ = c.JSON(ae.StatusCode, map[string]any{
+				"error":    true,
+				"code":     ae.Code,
+				"name":     ae.Name,
+				"message":  ae.Message,
+				"trace_id": traceID,
+			})
+			return
+		}
+
+		var he *echo.HTTPError
+		if stdlibErrors.As(err, &he) {
+			_ = c.JSON(he.Code, map[string]any{
+				"error":    true,
+				"code":     he.Code,
+				"message":  he.Message,
+				"trace_id": traceID,
+			})
+			return
+		}
+
+		logger.Error("unhandled error", zap.Error(err), zap.String("trace_id", traceID))
+		_ = c.JSON(http.StatusInternalServerError, map[string]any{
+			"error":    true,
+			"code":     apperrors.ErrInternal.Code,
+			"name":     apperrors.ErrInternal.Name,
+			"message":  apperrors.ErrInternal.Message,
+			"trace_id": traceID,
+		})
+	}
+}

@@ -1,0 +1,23 @@
+id: mongo
+kind: db
+display: MongoDB
+description: MongoDB via mongo-driver/v2
+go_imports:
+  - go.mongodb.org/mongo-driver/v2/mongo
+go_requires:
+  - go.mongodb.org/mongo-driver/v2
+config:
+  - key: mongo
+    type: MongoConfig
+    fields:
+      uri:      { type: string, default: "mongodb://localhost:27017" }
+      database: { type: string, default: app }
+env_overrides:
+  - { env: MONGO_URI, key: mongo.uri }
+  - { env: MONGO_DB,  key: mongo.database }
+compose:
+  service: mongo
+  image: mongo:7
+  ports: ["27017:27017"]
+  volumes: ["mongo_data:/data/db"]
+  named_volume: mongo_data

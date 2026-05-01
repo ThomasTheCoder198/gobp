@@ -1,0 +1,44 @@
+package utils
+
+import (
+	"net/url"
+	"strconv"
+)
+
+// PaginationFromQuery extracts page and page_size from URL query params.
+// Falls back to DefaultPage / DefaultPageSize when values are absent or invalid.
+//
+// Usage (Gin): PaginationFromQuery(c.Request.URL.Query())
+// Usage (Echo): PaginationFromQuery(c.Request().URL.Query())
+// Usage (Fiber): PaginationFromQuery(c.Queries()) — wrap Fiber query map with url.Values{}
+func PaginationFromQuery(q url.Values) PaginationQuery {
+	page, _ := strconv.Atoi(q.Get("page"))
+	pageSize, _ := strconv.Atoi(q.Get("page_size"))
+	if page <= 0 {
+		page = DefaultPage
+	}
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
+	if pageSize > MaxPageSize {
+		pageSize = MaxPageSize
+	}
+	return PaginationQuery{Page: page, PageSize: pageSize}
+}
+
+// StringOrDefault returns q.Get(key) when non-empty, otherwise def.
+func StringOrDefault(q url.Values, key, def string) string {
+	if v := q.Get(key); v != "" {
+		return v
+	}
+	return def
+}
+
+// IntOrDefault parses q.Get(key) as int. Returns def on absence or parse error.
+func IntOrDefault(q url.Values, key string, def int) int {
+	v, err := strconv.Atoi(q.Get(key))
+	if err != nil {
+		return def
+	}
+	return v
+}

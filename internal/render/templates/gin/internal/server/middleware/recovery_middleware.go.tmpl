@@ -1,0 +1,22 @@
+package middleware
+
+import (
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	apperrors "{{ .Module }}/errors"
+)
+
+// Recovery converts panics into ErrInternal pushed onto c.Errors so the
+// downstream ErrorMapper renders a structured JSON response.
+func Recovery(logger *zap.Logger) gin.HandlerFunc {
+	return gin.CustomRecoveryWithWriter(nil, func(c *gin.Context, recovered any) {
+		traceID := c.GetString("trace_id")
+		logger.Error("panic recovered",
+			zap.Any("cause", recovered),
+			zap.String("trace_id", traceID),
+		)
+		_ = c.Error(apperrors.ErrInternal)
+		c.Abort()
+	})
+}

@@ -1,0 +1,15 @@
+id: stripe
+kind: sdk
+display: Stripe
+description: Stripe client wrapper (stripe-go/v81)
+go_imports:
+  - github.com/stripe/stripe-go/v81
+go_requires:
+  - github.com/stripe/stripe-go/v81
+config:
+  - key: stripe
+    type: StripeConfig
+    fields:
+      api_key: { type: string, default: "", secret: true }
+env_overrides:
+  - { env: STRIPE_API_KEY, key: stripe.api_key }

@@ -1,0 +1,29 @@
+package middleware
+
+import (
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+)
+
+// AccessLog emits a structured access log line per request.
+//
+// Fields: method, path, status, latency_ms, trace_id (from context), client_ip.
+func AccessLog(logger *zap.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		latencyMs := time.Since(start).Milliseconds()
+
+		traceID := c.GetString("trace_id")
+		logger.Info("request",
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.Int("status", c.Writer.Status()),
+			zap.Int64("latency_ms", latencyMs),
+			zap.String("client_ip", c.ClientIP()),
+			zap.String("trace_id", traceID),
+		)
+	}
+}

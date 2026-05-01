@@ -1,0 +1,5 @@
+# cmd/worker
+
+Event-driven worker entry point for `{{ .Name }}`.
+
+Reads jobs from the queue defined in `pkg/queue` and dispatches them to handlers. Add a new handler by registering a consumer in `main.go`.

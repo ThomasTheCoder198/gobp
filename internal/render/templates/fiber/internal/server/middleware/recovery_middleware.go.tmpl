@@ -1,0 +1,32 @@
+package middleware
+
+import (
+	"fmt"
+	"runtime"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+
+	apperrors "{{ .Module }}/errors"
+)
+
+// Recovery returns middleware that converts panics into ErrInternal so the
+// error handler renders a structured JSON response.
+func Recovery(logger *zap.Logger) fiber.Handler {
+	return func(c *fiber.Ctx) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				traceID, _ := c.Locals("trace_id").(string)
+				buf := make([]byte, 2048)
+				n := runtime.Stack(buf, false)
+				logger.Error("panic recovered",
+					zap.Any("cause", r),
+					zap.String("trace_id", traceID),
+					zap.String("stack", string(buf[:n])),
+				)
+				err = fmt.Errorf("%w: %v", apperrors.ErrInternal, r)
+			}
+		}()
+		return c.Next()
+	}
+}

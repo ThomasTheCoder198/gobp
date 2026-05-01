@@ -1,0 +1,4 @@
+id: docker
+kind: addon
+display: Docker
+description: multi-stage Dockerfile for the server binary

@@ -1,0 +1,23 @@
+package middleware
+
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+)
+
+// TraceIDHeader is the inbound/outbound header name for request correlation.
+const TraceIDHeader = "X-Trace-Id"
+
+// TraceID injects a UUID v4 trace_id into the fiber context and response header.
+// Honors an inbound X-Trace-Id header if present and well-formed.
+func TraceID() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id := c.Get(TraceIDHeader)
+		if _, err := uuid.Parse(id); err != nil || id == "" {
+			id = uuid.New().String()
+		}
+		c.Locals("trace_id", id)
+		c.Set(TraceIDHeader, id)
+		return c.Next()
+	}
+}

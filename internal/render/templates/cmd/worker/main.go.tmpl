@@ -1,0 +1,44 @@
+// Command worker is the event-driven worker entry point for {{ .Name }}.
+package main
+
+import (
+	"context"
+	"fmt"
+	"os/signal"
+	"syscall"
+
+	"go.uber.org/zap"
+
+	"{{ .Module }}/log"
+	"{{ .Module }}/pkg/config"
+	"{{ .Module }}/pkg/queue"
+)
+
+func main() {
+	cfg := config.MustLoad()
+
+	logger, err := log.New(log.Config{Level: cfg.Log.Level, Encoding: cfg.Log.Encoding})
+	if err != nil {
+		panic(fmt.Errorf("init logger: %w", err))
+	}
+	defer func() { _ = logger.Sync() }()
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// TODO: wire your concrete consumer (Kafka / SQS / Redis Streams) below.
+	var c queue.Consumer
+	if c == nil {
+		logger.Warn("no consumer wired — implement queue.Consumer and assign it here")
+		return
+	}
+
+	logger.Info("worker starting")
+	if err := c.Start(ctx); err != nil {
+		logger.Error("worker stopped with error", zap.Error(err))
+	}
+
+	if err := c.Stop(); err != nil {
+		logger.Error("consumer stop failed", zap.Error(err))
+	}
+}

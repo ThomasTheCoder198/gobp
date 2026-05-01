@@ -1,0 +1,109 @@
+package main
+
+import (
+	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/internal/server/middleware"
+)
+
+// Server wraps the Wire-injected App and provides centralised route
+// registration. Add new controllers to App (via wire.go) and register
+// their routes in RegisterRoutes.
+type Server struct {
+	app    *App
+	logger *zap.Logger
+}
+
+// NewServer creates a ready-to-use Server.
+func NewServer(app *App, logger *zap.Logger) *Server {
+	return &Server{app: app, logger: logger}
+}
+
+// RegisterRoutes attaches all middleware and route groups to the Echo instance.
+func (s *Server) RegisterRoutes(e *echo.Echo) {
+	// CORS must be first to handle OPTIONS preflight before auth/tracing hits.
+	// Pass allowed origins explicitly in production: middleware.CORS("https://example.com")
+	e.Use(middleware.CORS())
+	e.Use(middleware.TraceID())
+	e.Use(middleware.AccessLog(s.logger))
+	e.Use(middleware.Recovery(s.logger))
+	e.HTTPErrorHandler = middleware.ErrorHandler(s.logger)
+
+	api := e.Group("")
+	s.app.Health.Register(api)
+{{- if .Websocket }}
+	s.app.WS.Register(api)
+{{- end }}
+
+	// ----------------------------------------------------------------
+	// Example: route groups with layered architecture
+	// ----------------------------------------------------------------
+	//
+	// v1 := e.Group("/api/v1")
+	// {
+	//     // Public routes (no auth middleware)
+	//     v1.POST("/auth/login", s.app.Auth.Login)
+	//     v1.POST("/auth/register", s.app.Auth.Register)
+	//
+	//     // Protected routes
+	//     authorized := v1.Group("", middleware.Auth())
+	//     {
+	//         users := authorized.Group("/users")
+	//         {
+	//             users.GET("", s.app.User.List)
+	//             users.GET("/:id", s.app.User.GetByID)
+	//             users.POST("", s.app.User.Create)
+	//             users.PUT("/:id", s.app.User.Update)
+	//             users.DELETE("/:id", s.app.User.Delete)
+	//         }
+	//     }
+	// }
+	//
+	// ----------------------------------------------------------------
+	// Layered architecture reference
+	// ----------------------------------------------------------------
+	//
+	// Controller — depends on service interface, handles HTTP concerns only.
+	//
+	//   // internal/server/controller/user_controller.go
+	//   type UserController struct {
+	//       svc service.UserService
+	//   }
+	//
+	//   func NewUserController(svc service.UserService) *UserController {
+	//       return &UserController{svc: svc}
+	//   }
+	//
+	//   func (c *UserController) List(ctx echo.Context) error {
+	//       users, err := c.svc.List(ctx.Request().Context())
+	//       if err != nil { ... }
+	//       return ctx.JSON(http.StatusOK, utils.Success(users))
+	//   }
+	//
+	// Service — business logic, depends on repository interface.
+	//
+	//   // internal/server/service/user_service.go
+	//   type UserService interface {
+	//       List(ctx context.Context) ([]entity.User, error)
+	//       GetByID(ctx context.Context, id string) (*entity.User, error)
+	//       Create(ctx context.Context, req dto.CreateUserRequest) (*entity.User, error)
+	//   }
+	//
+	// Repository — data access, depends on database driver.
+	//
+	//   // internal/server/repository/user_repository.go
+	//   type UserRepository interface {
+	//       FindAll(ctx context.Context) ([]entity.User, error)
+	//       FindByID(ctx context.Context, id string) (*entity.User, error)
+	//       Insert(ctx context.Context, u *entity.User) error
+	//   }
+	//
+	// Wire it up in wire.go:
+	//   wire.Build(
+	//       controller.NewUserController,
+	//       service.NewUserServiceImpl,
+	//       repository.NewUserRepositoryImpl,
+	//       ...
+	//   )
+}

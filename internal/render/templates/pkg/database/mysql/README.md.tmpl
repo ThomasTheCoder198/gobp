@@ -1,0 +1,7 @@
+# pkg/database/mysql
+
+GORM MySQL connection builder for `{{ .Name }}`.
+
+`New(ctx, cfg)` accepts a `config.MySQLConfig` and returns a `*gorm.DB`. It pings on startup to fail fast on misconfiguration.
+
+Connection values come from `config.yaml` (host, port, database) and `.env` (user, password).

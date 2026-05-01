@@ -1,0 +1,5 @@
+# internal/server/infrastructure/stripe
+
+Stripe SDK adapter for `{{ .Name }}`.
+
+Wraps the Stripe Go client and exposes a narrow interface to the rest of the application. The API key is loaded from `config.StripeConfig` (sourced from `STRIPE_API_KEY` in `.env`).

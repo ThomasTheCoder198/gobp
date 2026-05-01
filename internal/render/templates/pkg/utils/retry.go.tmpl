@@ -1,0 +1,48 @@
+package utils
+
+import (
+	"context"
+	"math"
+	"time"
+)
+
+// RetryConfig controls how Retry backs off between attempts.
+type RetryConfig struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
+	Multiplier  float64
+}
+
+// DefaultRetryConfig is 3 attempts with exponential backoff capped at 5 s.
+var DefaultRetryConfig = RetryConfig{
+	MaxAttempts: 3,
+	BaseDelay:   100 * time.Millisecond,
+	MaxDelay:    5 * time.Second,
+	Multiplier:  2.0,
+}
+
+// Retry calls fn up to cfg.MaxAttempts times, sleeping exponentially between
+// failures. Returns the last error when all attempts are exhausted, or
+// ctx.Err() if the context is cancelled while waiting.
+func Retry(ctx context.Context, cfg RetryConfig, fn func() error) error {
+	var err error
+	for attempt := 0; attempt < cfg.MaxAttempts; attempt++ {
+		if err = fn(); err == nil {
+			return nil
+		}
+		if attempt == cfg.MaxAttempts-1 {
+			break
+		}
+		delay := time.Duration(float64(cfg.BaseDelay) * math.Pow(cfg.Multiplier, float64(attempt)))
+		if delay > cfg.MaxDelay {
+			delay = cfg.MaxDelay
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+	return err
+}

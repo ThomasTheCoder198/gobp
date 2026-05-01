@@ -1,0 +1,21 @@
+package utils
+
+// Ptr returns a pointer to v.
+func Ptr[T any](v T) *T { return &v }
+
+// Val safely dereferences p. Returns the zero value of T when p is nil.
+func Val[T any](p *T) T {
+	if p == nil {
+		var zero T
+		return zero
+	}
+	return *p
+}
+
+// ValOr returns *p when p is non-nil, otherwise fallback.
+func ValOr[T any](p *T, fallback T) T {
+	if p == nil {
+		return fallback
+	}
+	return *p
+}

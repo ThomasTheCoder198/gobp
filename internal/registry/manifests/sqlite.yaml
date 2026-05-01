@@ -1,0 +1,15 @@
+id: sqlite
+kind: db
+display: SQLite
+description: SQLite via gorm + sqlite driver
+go_imports:
+  - gorm.io/gorm
+  - gorm.io/driver/sqlite
+go_requires:
+  - gorm.io/gorm
+  - gorm.io/driver/sqlite
+config:
+  - key: sqlite
+    type: SQLiteConfig
+    fields:
+      path: { type: string, default: ./app.db }

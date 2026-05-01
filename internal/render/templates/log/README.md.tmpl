@@ -1,0 +1,7 @@
+# log
+
+Zap logger with `trace_id`-aware context helpers for `{{ .Name }}`.
+
+- `logger.go` — `NewLogger(cfg)` builds a `*zap.Logger` from `config.LogConfig`
+
+Use `log.FromCtx(ctx)` to retrieve the logger with the current trace ID already attached, and `log.WithCtx(ctx, logger)` to store it.

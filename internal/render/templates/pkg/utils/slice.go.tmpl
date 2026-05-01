@@ -1,0 +1,56 @@
+package utils
+
+// Contains reports whether item is present in slice.
+func Contains[T comparable](slice []T, item T) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
+
+// Filter returns elements of slice for which f returns true.
+func Filter[T any](slice []T, f func(T) bool) []T {
+	out := make([]T, 0, len(slice))
+	for _, v := range slice {
+		if f(v) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Map applies f to every element and returns the results.
+func Map[T, R any](slice []T, f func(T) R) []R {
+	out := make([]R, len(slice))
+	for i, v := range slice {
+		out[i] = f(v)
+	}
+	return out
+}
+
+// Unique returns a new slice with duplicates removed, preserving order.
+func Unique[T comparable](slice []T) []T {
+	seen := make(map[T]struct{}, len(slice))
+	out := make([]T, 0, len(slice))
+	for _, v := range slice {
+		if _, ok := seen[v]; !ok {
+			seen[v] = struct{}{}
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Chunk splits slice into sub-slices of at most size elements.
+func Chunk[T any](slice []T, size int) [][]T {
+	if size <= 0 {
+		return nil
+	}
+	var chunks [][]T
+	for size < len(slice) {
+		slice, chunks = slice[size:], append(chunks, slice[:size])
+	}
+	return append(chunks, slice)
+}

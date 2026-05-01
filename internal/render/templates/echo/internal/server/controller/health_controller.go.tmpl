@@ -1,0 +1,26 @@
+package controller
+
+import (
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+)
+
+// HealthController serves the /healthz liveness check.
+type HealthController struct{}
+
+// NewHealthController is the Wire provider.
+func NewHealthController() *HealthController { return &HealthController{} }
+
+// Register attaches the controller's routes to the given router group.
+func (h *HealthController) Register(g *echo.Group) {
+	g.GET("/healthz", h.Health)
+}
+
+// Health returns 200 with a small status payload, including trace_id from context.
+func (h *HealthController) Health(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]any{
+		"status":   "ok",
+		"trace_id": c.Get("trace_id"),
+	})
+}

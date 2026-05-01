@@ -1,0 +1,7 @@
+# pkg/database/mongo
+
+MongoDB client builder for `{{ .Name }}`.
+
+`New(ctx, cfg)` accepts a `config.MongoConfig` and returns a `*mongo.Client`. It pings on startup to fail fast on misconfiguration. Caller is responsible for calling `client.Disconnect(ctx)` on shutdown.
+
+Connection values come from `config.yaml` (database name) and `.env` (URI with credentials).

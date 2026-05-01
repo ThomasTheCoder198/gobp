@@ -1,0 +1,33 @@
+// Package stripe wraps the Stripe SDK behind a thin Client type.
+package stripe
+
+import (
+	"context"
+
+	stripego "github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/account"
+)
+
+// Config carries the inputs needed to build the client.
+type Config struct {
+	APIKey string
+}
+
+// Client is the project-level Stripe handle. The Stripe Go SDK is
+// package-level by default — this struct keeps a reference for future
+// per-instance configuration.
+type Client struct {
+	apiKey string
+}
+
+// New configures the Stripe SDK with the API key and returns a handle.
+func New(cfg Config) *Client {
+	stripego.Key = cfg.APIKey
+	return &Client{apiKey: cfg.APIKey}
+}
+
+// Ping does a lightweight liveness check (retrieves the account).
+func (c *Client) Ping(_ context.Context) error {
+	_, err := account.Get()
+	return err
+}

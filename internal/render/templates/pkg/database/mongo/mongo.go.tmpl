@@ -1,0 +1,25 @@
+// Package mongo exposes a single *mongo.Client builder.
+package mongo
+
+import (
+	"context"
+	"fmt"
+
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// New connects and pings once. Caller owns client.Disconnect().
+func New(ctx context.Context, cfg config.MongoConfig) (*mongo.Client, error) {
+	client, err := mongo.Connect(options.Client().ApplyURI(cfg.URI))
+	if err != nil {
+		return nil, fmt.Errorf("connect: %w", err)
+	}
+	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(ctx)
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+	return client, nil
+}

@@ -1,0 +1,21 @@
+# internal/server/middleware
+
+HTTP middleware chain for `{{ .Name }}`.
+
+| File | Purpose |
+|------|---------|
+| `cors_middleware.go` | CORS headers and OPTIONS preflight — registered first so preflight bypasses auth |
+| `trace_id_middleware.go` | Generates a unique `X-Trace-Id` per request and attaches it to the context |
+| `logger_middleware.go` | Structured request/response logging via zap |
+| `error_middleware.go` | Maps `errors.AppError` values to structured JSON error responses |
+| `recovery_middleware.go` | Recovers from panics and returns a 500 response |
+
+**Registration order** (in `cmd/server/server.go`):
+```
+CORS → TraceID → Logger → Recovery → ErrorMapper
+```
+
+**CORS production usage** — restrict origins explicitly:
+```go
+r.Use(middleware.CORS("https://app.example.com", "https://admin.example.com"))
+```

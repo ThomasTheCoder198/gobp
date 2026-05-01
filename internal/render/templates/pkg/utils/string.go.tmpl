@@ -1,0 +1,50 @@
+// Package utils provides reusable, non-business-logic helpers.
+package utils
+
+import (
+	"regexp"
+	"strings"
+	"unicode"
+)
+
+var (
+	nonAlphanumericRe = regexp.MustCompile(`[^a-z0-9]+`)
+)
+
+// IsBlank reports whether s is empty or whitespace-only.
+func IsBlank(s string) bool { return strings.TrimSpace(s) == "" }
+
+// Truncate shortens s to maxLen runes. If truncated, suffix is appended.
+func Truncate(s, suffix string, maxLen int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	cut := maxLen - len([]rune(suffix))
+	if cut < 0 {
+		cut = 0
+	}
+	return string(runes[:cut]) + suffix
+}
+
+// Slug converts s to a lowercase, hyphen-separated URL-safe string.
+func Slug(s string) string {
+	s = strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return unicode.ToLower(r)
+		}
+		return '-'
+	}, s)
+	s = nonAlphanumericRe.ReplaceAllString(s, "-")
+	return strings.Trim(s, "-")
+}
+
+// Coalesce returns the first non-blank string from ss.
+func Coalesce(ss ...string) string {
+	for _, s := range ss {
+		if !IsBlank(s) {
+			return s
+		}
+	}
+	return ""
+}

@@ -1,0 +1,60 @@
+// Package handler holds non-REST handlers (currently: WebSocket).
+package handler
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// WSHandler upgrades HTTP requests to WebSocket connections.
+type WSHandler struct {
+	upgrader     websocket.Upgrader
+	logger       *zap.Logger
+	pingInterval time.Duration
+}
+
+// NewWSHandler is the Wire provider. cfg comes from config.Config.Websocket.
+func NewWSHandler(cfg config.WebsocketConfig, logger *zap.Logger) *WSHandler {
+	return &WSHandler{
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  cfg.ReadBufferSize,
+			WriteBufferSize: cfg.WriteBufferSize,
+			// CheckOrigin: tighten before production — reject unknown origins.
+			CheckOrigin: func(_ *http.Request) bool { return true },
+		},
+		logger:       logger,
+		pingInterval: time.Duration(cfg.PingIntervalSec) * time.Second,
+	}
+}
+
+// Register attaches the WS route to the given router group.
+func (h *WSHandler) Register(rg *gin.RouterGroup) {
+	rg.GET("/ws", h.Handle)
+}
+
+// Handle upgrades the connection and runs the read/write loop.
+func (h *WSHandler) Handle(c *gin.Context) {
+	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		h.logger.Error("ws upgrade failed", zap.Error(err))
+		return
+	}
+	defer func() { _ = conn.Close() }()
+
+	// TODO: replace echo loop with your message handler logic.
+	for {
+		mt, msg, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
+		if err := conn.WriteMessage(mt, msg); err != nil {
+			return
+		}
+	}
+}

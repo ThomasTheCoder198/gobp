@@ -1,0 +1,60 @@
+// Command server is the HTTP entry point for {{ .Name }}.
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/log"
+	"{{ .Module }}/pkg/config"
+)
+
+func main() {
+	cfg := config.MustLoad()
+
+	logger, err := log.New(log.Config{Level: cfg.Log.Level, Encoding: cfg.Log.Encoding})
+	if err != nil {
+		panic(fmt.Errorf("init logger: %w", err))
+	}
+	defer func() { _ = logger.Sync() }()
+
+	app := InitializeApp(logger, cfg)
+
+	r := gin.New()
+	NewServer(app, logger).RegisterRoutes(r)
+
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      r,
+		ReadTimeout:  time.Duration(cfg.Server.ReadTimeoutSec) * time.Second,
+		WriteTimeout: time.Duration(cfg.Server.WriteTimeoutSec) * time.Second,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		logger.Info("server starting", zap.String("addr", addr))
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Fatal("server failed", zap.Error(err))
+		}
+	}()
+
+	<-ctx.Done()
+	logger.Info("shutdown initiated")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("graceful shutdown failed", zap.Error(err))
+	}
+}

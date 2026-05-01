@@ -1,0 +1,21 @@
+package utils
+
+import "strconv"
+
+// StrToInt converts s to int, returning 0 on error.
+func StrToInt(s string) int { v, _ := strconv.Atoi(s); return v }
+
+// StrToInt64 converts s to int64, returning 0 on error.
+func StrToInt64(s string) int64 { v, _ := strconv.ParseInt(s, 10, 64); return v }
+
+// StrToFloat64 converts s to float64, returning 0 on error.
+func StrToFloat64(s string) float64 { v, _ := strconv.ParseFloat(s, 64); return v }
+
+// StrToBool parses "true", "false", "1", "0", etc. Returns false on error.
+func StrToBool(s string) bool { v, _ := strconv.ParseBool(s); return v }
+
+// IntToStr converts i to its decimal string representation.
+func IntToStr(i int) string { return strconv.Itoa(i) }
+
+// BoolToStr returns "true" or "false".
+func BoolToStr(b bool) string { return strconv.FormatBool(b) }

@@ -1,0 +1,7 @@
+# pkg/database/redis
+
+Redis client builder for `{{ .Name }}`.
+
+`New(ctx, cfg)` accepts a `config.RedisConfig` and returns a `*redis.Client`. It pings on startup to fail fast on misconfiguration. Caller is responsible for calling `client.Close()` on shutdown.
+
+Connection values come from `config.yaml` (addr, db index) and `.env` (password).

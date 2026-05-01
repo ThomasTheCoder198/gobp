@@ -1,0 +1,18 @@
+# pkg/utils
+
+Reusable, non-business-logic utilities for `{{ .Name }}`.
+
+| File | Purpose |
+|------|---------|
+| `string.go` | `IsBlank`, `Truncate`, `Slug`, `Coalesce` |
+| `pointer.go` | Generic `Ptr[T]`, `Val[T]`, `ValOr[T]` |
+| `slice.go` | Generic `Contains`, `Filter`, `Map`, `Unique`, `Chunk` |
+| `time.go` | `StartOfDay`, `EndOfDay`, `ParseISO`, `FormatISO`, `InRange` |
+| `pagination.go` | `PaginationQuery` with `Offset()`/`Limit()`, `PaginationMeta`, `NewPaginationMeta` |
+| `response.go` | `Success[T]`, `Paginated[T]`, `Message` — standard JSON envelope types |
+| `request.go` | `PaginationFromQuery`, `StringOrDefault`, `IntOrDefault` |
+| `validation.go` | Singleton `validator.Validate` with JSON field names, `Validate(struct)` → `map[field]message` |
+| `retry.go` | `Retry(ctx, cfg, fn)` with configurable exponential backoff |
+| `convert.go` | `StrToInt`, `StrToInt64`, `StrToFloat64`, `StrToBool`, `IntToStr`, `BoolToStr` |
+
+**Rule**: nothing in this package may import from `internal/` or depend on business logic.

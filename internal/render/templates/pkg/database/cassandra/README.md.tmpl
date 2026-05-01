@@ -1,0 +1,7 @@
+# pkg/database/cassandra
+
+Cassandra session builder for `{{ .Name }}`.
+
+`New(cfg)` accepts a `config.CassandraConfig` and returns a `*gocql.Session`. Caller is responsible for calling `session.Close()` on shutdown.
+
+Hosts and keyspace come from `config.yaml`; override with `CASSANDRA_HOSTS` and `CASSANDRA_KEYSPACE` in `.env`.

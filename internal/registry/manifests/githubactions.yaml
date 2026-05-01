@@ -1,0 +1,4 @@
+id: githubactions
+kind: addon
+display: GitHub Actions
+description: CI workflow that runs lint, test, build

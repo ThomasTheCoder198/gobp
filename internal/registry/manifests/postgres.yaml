@@ -1,0 +1,34 @@
+id: postgres
+kind: db
+display: PostgreSQL
+description: PostgreSQL via pgx/v5/pgxpool (single pool, no master/slave)
+go_imports:
+  - github.com/jackc/pgx/v5/pgxpool
+go_requires:
+  - github.com/jackc/pgx/v5
+config:
+  - key: postgres
+    type: PostgresConfig
+    fields:
+      host:     { type: string, default: localhost }
+      port:     { type: int,    default: 5432 }
+      user:     { type: string, default: postgres }
+      password: { type: string, default: "",        secret: true }
+      database: { type: string, default: app }
+      pool_max: { type: int,    default: 10 }
+env_overrides:
+  - { env: POSTGRES_HOST,     key: postgres.host }
+  - { env: POSTGRES_PORT,     key: postgres.port }
+  - { env: POSTGRES_USER,     key: postgres.user }
+  - { env: POSTGRES_PASSWORD, key: postgres.password }
+  - { env: POSTGRES_DB,       key: postgres.database }
+compose:
+  service: postgres
+  image: postgres:16-alpine
+  ports: ["5432:5432"]
+  environment:
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: ${POSTGRES_DB:-app}
+  volumes: ["postgres_data:/var/lib/postgresql/data"]
+  named_volume: postgres_data

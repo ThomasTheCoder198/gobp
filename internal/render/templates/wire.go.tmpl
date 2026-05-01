@@ -1,0 +1,72 @@
+//go:build wireinject
+// +build wireinject
+
+package main
+
+import (
+	"github.com/google/wire"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/internal/server/controller"
+{{- if .Websocket }}
+	"{{ .Module }}/internal/server/handler"
+{{- end }}
+	"{{ .Module }}/pkg/config"
+)
+
+// App is the root container assembled by Wire.
+//
+// To add a new feature, follow these three steps:
+//
+//   Step 1 — Add a field for the controller:
+//
+//     User *controller.UserController
+//
+//   Step 2 — Register its provider chain in wire.Build:
+//
+//     wire.Build(
+//         controller.NewHealthController,
+//         controller.NewUserController,      // ← new
+//         service.NewUserServiceImpl,        // ← new
+//         repository.NewUserRepositoryImpl,  // ← new
+//         wire.Struct(new(App), "*"),
+//     )
+//
+//   Step 3 — Implement the three constructor functions:
+//
+//     // internal/server/controller/user_controller.go
+//     func NewUserController(svc service.UserService) *UserController
+//
+//     // internal/server/service/user_service.go
+//     func NewUserServiceImpl(repo repository.UserRepo) *UserServiceImpl
+//
+//     // internal/server/repository/user_repository.go
+//     func NewUserRepositoryImpl(pool *pgxpool.Pool) *UserRepositoryImpl
+//
+//   Run `make wire` after every change to regenerate wire_gen.go.
+type App struct {
+	Health *controller.HealthController
+{{- if .Websocket }}
+	WS *handler.WSHandler
+{{- end }}
+}
+
+// InitializeApp is the Wire injector. Real body lives in wire_gen.go.
+// Re-generate with: make wire
+func InitializeApp(logger *zap.Logger, cfg *config.Config) *App {
+	wire.Build(
+		controller.NewHealthController,
+{{- if .Websocket }}
+		handler.NewWSHandler,
+		provideWebsocketConfig,
+{{- end }}
+		wire.Struct(new(App), "*"),
+	)
+	return nil
+}
+{{ if .Websocket }}
+// provideWebsocketConfig extracts the WebSocket sub-config from the root config.
+func provideWebsocketConfig(cfg *config.Config) config.WebsocketConfig {
+	return cfg.Websocket
+}
+{{ end -}}

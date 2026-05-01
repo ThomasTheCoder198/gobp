@@ -1,0 +1,23 @@
+id: redis
+kind: db
+display: Redis
+description: Redis via redis/go-redis/v9 (single client)
+go_imports:
+  - github.com/redis/go-redis/v9
+go_requires:
+  - github.com/redis/go-redis/v9
+config:
+  - key: redis
+    type: RedisConfig
+    fields:
+      addr:     { type: string, default: "localhost:6379" }
+      password: { type: string, default: "", secret: true }
+      db:       { type: int,    default: 0 }
+env_overrides:
+  - { env: REDIS_ADDR,     key: redis.addr }
+  - { env: REDIS_PASSWORD, key: redis.password }
+compose:
+  service: redis
+  image: redis:7-alpine
+  ports: ["6379:6379"]
+  command: 'redis-server --requirepass ${REDIS_PASSWORD}'

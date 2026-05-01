@@ -1,0 +1,7 @@
+# internal/server/handler
+
+WebSocket handlers for `{{ .Name }}`.
+
+- `ws_handler.go` — upgrades HTTP connections to WebSocket and runs the read/write loop
+
+Register WebSocket routes in `cmd/server/server.go`. Use the `websocket` config block in `config.yaml` to tune buffer sizes and ping intervals.

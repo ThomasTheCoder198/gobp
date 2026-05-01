@@ -1,0 +1,4 @@
+id: worker
+kind: pattern
+display: Worker
+description: cmd/worker entry plus pkg/queue interface stubs

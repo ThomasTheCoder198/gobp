@@ -1,0 +1,23 @@
+// Command cli is the project's command-line entry point.
+//
+// Only a root command is generated. Add subcommands as you build features
+// (e.g., `users list`, `migrate up`) — wire them with cobra.AddCommand.
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+func main() {
+	root := &cobra.Command{
+		Use:   "{{ .Name }}",
+		Short: "{{ .Name }} CLI",
+	}
+	if err := root.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}

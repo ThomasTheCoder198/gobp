@@ -1,0 +1,10 @@
+package queue
+
+import "context"
+
+// Producer is the publish-only contract.
+//
+// TODO: implement.
+type Producer interface {
+	Publish(ctx context.Context, topic string, payload []byte) error
+}

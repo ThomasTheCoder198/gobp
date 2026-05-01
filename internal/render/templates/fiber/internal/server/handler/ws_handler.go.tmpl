@@ -1,0 +1,51 @@
+package handler
+
+import (
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// WSHandler upgrades HTTP requests to WebSocket connections.
+type WSHandler struct {
+	logger       *zap.Logger
+	pingInterval time.Duration
+}
+
+// NewWSHandler is the Wire provider. cfg comes from config.Config.Websocket.
+func NewWSHandler(cfg config.WebsocketConfig, logger *zap.Logger) *WSHandler {
+	return &WSHandler{
+		logger:       logger,
+		pingInterval: time.Duration(cfg.PingIntervalSec) * time.Second,
+	}
+}
+
+// Register attaches the WS route to the given router.
+func (h *WSHandler) Register(r fiber.Router) {
+	r.Use("/ws", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	r.Get("/ws", websocket.New(h.handle))
+}
+
+func (h *WSHandler) handle(c *websocket.Conn) {
+	defer func() { _ = c.Close() }()
+
+	// TODO: replace echo loop with your message handler logic.
+	for {
+		mt, msg, err := c.ReadMessage()
+		if err != nil {
+			return
+		}
+		if err := c.WriteMessage(mt, msg); err != nil {
+			return
+		}
+	}
+}

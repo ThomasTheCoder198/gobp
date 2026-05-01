@@ -1,0 +1,25 @@
+// Package redis exposes a single *redis.Client builder.
+package redis
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// New constructs a *redis.Client and pings it once. Caller owns client.Close().
+func New(ctx context.Context, cfg config.RedisConfig) (*redis.Client, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+		DB:       cfg.DB,
+	})
+	if err := client.Ping(ctx).Err(); err != nil {
+		_ = client.Close()
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+	return client, nil
+}

@@ -1,0 +1,13 @@
+# migration
+
+Database migration files for `{{ .Name }}`.
+
+Recommended tools: `goose` or `golang-migrate`. Name files with a sequential numeric prefix so they run in order:
+
+```
+0001_create_users.sql
+0002_add_email_index.sql
+0003_add_roles_table.sql
+```
+
+Run migrations with `make migrate-up` (add the target to `Makefile` once you pick a tool).

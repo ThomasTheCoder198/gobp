@@ -1,0 +1,28 @@
+package utils
+
+import "time"
+
+// StartOfDay returns midnight (00:00:00) on the same calendar day as t.
+func StartOfDay(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, t.Location())
+}
+
+// EndOfDay returns the last nanosecond (23:59:59.999999999) of the day of t.
+func EndOfDay(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 23, 59, 59, int(time.Second-time.Nanosecond), t.Location())
+}
+
+// ParseISO parses an RFC 3339 / ISO 8601 timestamp string.
+func ParseISO(s string) (time.Time, error) {
+	return time.Parse(time.RFC3339, s)
+}
+
+// FormatISO formats t as an RFC 3339 string in UTC.
+func FormatISO(t time.Time) string { return t.UTC().Format(time.RFC3339) }
+
+// InRange reports whether t is within [from, to] inclusive.
+func InRange(t, from, to time.Time) bool {
+	return !t.Before(from) && !t.After(to)
+}

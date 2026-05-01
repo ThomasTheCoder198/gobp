@@ -1,0 +1,47 @@
+# Non-secret structural defaults only. Credentials live in .env.
+server:
+  port: 8080
+  read_timeout_sec: 15
+  write_timeout_sec: 15
+log:
+  level: info
+  encoding: json
+{{ if .HasDB.postgres -}}
+postgres:
+  host: localhost
+  port: 5432
+  database: {{ .Name }}
+  pool_max: 10
+{{ end -}}
+{{ if .HasDB.mysql -}}
+mysql:
+  host: localhost
+  port: 3306
+  database: {{ .Name }}
+{{ end -}}
+{{ if .HasDB.mongo -}}
+mongo:
+  uri: mongodb://localhost:27017
+  database: {{ .Name }}
+{{ end -}}
+{{ if .HasDB.redis -}}
+redis:
+  addr: localhost:6379
+  db: 0
+{{ end -}}
+{{ if .HasDB.sqlite -}}
+sqlite:
+  path: ./{{ .Name }}.db
+{{ end -}}
+{{ if .HasDB.cassandra -}}
+cassandra:
+  hosts:
+    - localhost
+  keyspace: {{ .Name }}
+{{ end -}}
+{{ if .Websocket -}}
+websocket:
+  read_buffer_size: 1024
+  write_buffer_size: 1024
+  ping_interval_sec: 30
+{{ end -}}

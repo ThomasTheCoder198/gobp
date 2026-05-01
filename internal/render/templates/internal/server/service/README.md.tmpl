@@ -1,0 +1,7 @@
+# internal/server/service
+
+Business logic layer for `{{ .Name }}`.
+
+Service structs implement use-case logic. They accept repository interfaces and external adapters as constructor arguments — never HTTP types, never raw database objects.
+
+**Convention**: define a `XxxService` interface alongside `xxxService` struct. Wire them in `cmd/server/wire.go`.

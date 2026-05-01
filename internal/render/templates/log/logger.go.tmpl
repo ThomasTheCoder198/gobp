@@ -1,0 +1,71 @@
+// Package log wraps zap with project conventions: JSON encoder by default,
+// trace_id automatically attached when InfoCtx/ErrorCtx are passed a *gin.Context.
+package log
+
+import (
+	"os"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
+
+// Config is the subset of pkg/config.LogConfig we need at this layer.
+type Config struct {
+	Level    string
+	Encoding string
+}
+
+// New builds a *zap.Logger from cfg. Encoding "json" → production JSON; anything
+// else → development console output.
+func New(cfg Config) (*zap.Logger, error) {
+	level := parseLevel(cfg.Level)
+
+	encCfg := zap.NewProductionEncoderConfig()
+	encCfg.TimeKey = "time"
+	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	var encoder zapcore.Encoder
+	if cfg.Encoding == "console" {
+		encCfg = zap.NewDevelopmentEncoderConfig()
+		encoder = zapcore.NewConsoleEncoder(encCfg)
+	} else {
+		encoder = zapcore.NewJSONEncoder(encCfg)
+	}
+
+	core := zapcore.NewCore(encoder, zapcore.Lock(zapcore.AddSync(os.Stdout)), zap.NewAtomicLevelAt(level))
+	return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)), nil
+}
+
+func parseLevel(s string) zapcore.Level {
+	var lvl zapcore.Level
+	if err := lvl.UnmarshalText([]byte(s)); err != nil {
+		return zapcore.InfoLevel
+	}
+	return lvl
+}
+
+// InfoCtx logs at info level, attaching trace_id when c carries one.
+func InfoCtx(c *gin.Context, logger *zap.Logger, msg string, fields ...zap.Field) {
+	logger.Info(msg, withTraceID(c, fields)...)
+}
+
+// ErrorCtx logs at error level, attaching trace_id when c carries one.
+func ErrorCtx(c *gin.Context, logger *zap.Logger, msg string, fields ...zap.Field) {
+	logger.Error(msg, withTraceID(c, fields)...)
+}
+
+// WarnCtx logs at warn level.
+func WarnCtx(c *gin.Context, logger *zap.Logger, msg string, fields ...zap.Field) {
+	logger.Warn(msg, withTraceID(c, fields)...)
+}
+
+func withTraceID(c *gin.Context, fields []zap.Field) []zap.Field {
+	if c == nil {
+		return fields
+	}
+	if id := c.GetString("trace_id"); id != "" {
+		return append(fields, zap.String("trace_id", id))
+	}
+	return fields
+}

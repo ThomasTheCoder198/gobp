@@ -1,0 +1,8 @@
+id: gin
+kind: framework
+display: Gin
+description: gin-gonic HTTP framework
+go_imports:
+  - github.com/gin-gonic/gin
+go_requires:
+  - github.com/gin-gonic/gin

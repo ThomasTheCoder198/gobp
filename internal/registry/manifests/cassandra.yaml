@@ -1,0 +1,23 @@
+id: cassandra
+kind: db
+display: Cassandra
+description: Cassandra via gocql
+go_imports:
+  - github.com/gocql/gocql
+go_requires:
+  - github.com/gocql/gocql
+config:
+  - key: cassandra
+    type: CassandraConfig
+    fields:
+      hosts:    { type: "[]string", default: ["localhost"] }
+      keyspace: { type: string,     default: app }
+env_overrides:
+  - { env: CASSANDRA_HOSTS,    key: cassandra.hosts }
+  - { env: CASSANDRA_KEYSPACE, key: cassandra.keyspace }
+compose:
+  service: cassandra
+  image: cassandra:4
+  ports: ["9042:9042"]
+  volumes: ["cassandra_data:/var/lib/cassandra"]
+  named_volume: cassandra_data

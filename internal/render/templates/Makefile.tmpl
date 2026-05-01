@@ -1,0 +1,31 @@
+.PHONY: build run test lint wire compose-up compose-down{{ if .HasPattern.worker }} run-worker{{ end }}
+
+build:
+	go build -o bin/server ./cmd/server
+{{- if .HasPattern.worker }}
+	go build -o bin/worker ./cmd/worker
+{{- end }}
+
+run:
+	go run ./cmd/server
+
+{{- if .HasPattern.worker }}
+
+run-worker:
+	go run ./cmd/worker
+{{- end }}
+
+test:
+	go test ./...
+
+lint:
+	go vet ./...
+
+wire:
+	wire ./...
+
+compose-up:
+	docker compose -f deploy/docker-compose.yml up -d
+
+compose-down:
+	docker compose -f deploy/docker-compose.yml down

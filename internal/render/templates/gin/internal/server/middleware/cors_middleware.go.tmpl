@@ -1,0 +1,58 @@
+package middleware
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+// CORS returns middleware that adds CORS response headers.
+//
+// Pass explicit origins in production:
+//
+//	r.Use(middleware.CORS("https://app.example.com", "https://admin.example.com"))
+//
+// Wildcard "*" (default) is convenient for development but should not be used
+// in production when credentials (cookies, auth headers) are involved.
+func CORS(allowedOrigins ...string) gin.HandlerFunc {
+	origins := allowedOrigins
+	if len(origins) == 0 {
+		origins = []string{"*"}
+	}
+	const (
+		methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		headers = "Origin, Content-Type, Accept, Authorization, X-Trace-Id"
+	)
+	return func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+		matched := matchAllowedOrigin(origin, origins)
+		if matched != "" {
+			c.Header("Access-Control-Allow-Origin", matched)
+			if matched != "*" {
+				c.Header("Vary", "Origin")
+			}
+		}
+		c.Header("Access-Control-Allow-Methods", methods)
+		c.Header("Access-Control-Allow-Headers", headers)
+		c.Header("Access-Control-Max-Age", "86400")
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
+}
+
+func matchAllowedOrigin(origin string, allowed []string) string {
+	for _, o := range allowed {
+		if o == "*" {
+			return "*"
+		}
+		if strings.EqualFold(o, origin) {
+			return origin
+		}
+	}
+	return ""
+}

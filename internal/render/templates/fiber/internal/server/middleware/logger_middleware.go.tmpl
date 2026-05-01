@@ -1,0 +1,28 @@
+package middleware
+
+import (
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+)
+
+// AccessLog emits a structured access log line per request.
+func AccessLog(logger *zap.Logger) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		start := time.Now()
+		err := c.Next()
+		latencyMs := time.Since(start).Milliseconds()
+
+		traceID, _ := c.Locals("trace_id").(string)
+		logger.Info("request",
+			zap.String("method", c.Method()),
+			zap.String("path", c.Path()),
+			zap.Int("status", c.Response().StatusCode()),
+			zap.Int64("latency_ms", latencyMs),
+			zap.String("client_ip", c.IP()),
+			zap.String("trace_id", traceID),
+		)
+		return err
+	}
+}

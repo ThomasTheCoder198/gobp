@@ -1,0 +1,13 @@
+// Package queue holds producer/consumer interface stubs. Implement the
+// concrete drivers (Kafka, SQS, Redis Streams, etc.) in subpackages.
+package queue
+
+import "context"
+
+// Consumer is the lifecycle contract for an event consumer.
+//
+// TODO: implement with Kafka / SQS / Redis Streams.
+type Consumer interface {
+	Start(ctx context.Context) error
+	Stop() error
+}

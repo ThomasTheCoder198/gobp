@@ -1,0 +1,27 @@
+-- Migration: 0001_init
+-- Project:   {{ .Name }}
+-- Created:   {{ .Year }}
+--
+-- Run with goose:
+--   goose -dir migration postgres "$DATABASE_URL" up
+--
+-- Run with golang-migrate:
+--   migrate -path migration -database "$DATABASE_URL" up
+
+-- +goose Up
+-- +goose StatementBegin
+CREATE TABLE IF NOT EXISTS users (
+    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    email      VARCHAR(255) NOT NULL UNIQUE,
+    name       VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS users;
+-- +goose StatementEnd

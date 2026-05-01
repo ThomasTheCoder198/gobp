@@ -1,0 +1,13 @@
+package errors
+
+import "net/http"
+
+// Baseline codes shared by every project. Add domain-specific codes alongside
+// these in your own files (e.g., errors_user.go) using the same NewAppError shape.
+var (
+	ErrBadRequest   = NewAppError(400000, "ErrBadRequest", http.StatusBadRequest, "bad request", "bad request")
+	ErrUnauthorized = NewAppError(401000, "ErrUnauthorized", http.StatusUnauthorized, "unauthorized", "unauthorized")
+	ErrForbidden    = NewAppError(403000, "ErrForbidden", http.StatusForbidden, "forbidden", "forbidden")
+	ErrNotFound     = NewAppError(404000, "ErrNotFound", http.StatusNotFound, "not found", "not found")
+	ErrInternal     = NewAppError(500000, "ErrInternal", http.StatusInternalServerError, "internal server error", "unexpected internal error")
+)

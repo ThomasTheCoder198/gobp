@@ -1,0 +1,7 @@
+# pkg/database/sqlite
+
+GORM SQLite connection builder for `{{ .Name }}`.
+
+`New(cfg)` accepts a `config.SQLiteConfig` and opens (or creates) the database file at `cfg.Path`. Returns a `*gorm.DB`.
+
+The file path is set in `config.yaml` under `sqlite.path`. Use `:memory:` for an in-process test database.

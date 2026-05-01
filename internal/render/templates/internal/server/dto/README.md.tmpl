@@ -1,0 +1,5 @@
+# internal/server/dto
+
+Data transfer objects for `{{ .Name }}`.
+
+DTOs define the exact shape of HTTP request and response payloads. They carry JSON/form tags and validation rules. They must never cross into the service layer — map them to domain models in the controller before passing down.

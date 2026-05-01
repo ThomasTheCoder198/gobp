@@ -1,0 +1,7 @@
+# internal/server/infrastructure
+
+Adapters for external services used by `{{ .Name }}`.
+
+Each sub-package wraps a third-party client (payment processor, email provider, storage, etc.) behind a clean interface, hiding vendor SDK details from the rest of the application.
+
+**Convention**: define an interface in the calling service, implement it here.

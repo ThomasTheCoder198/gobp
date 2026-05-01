@@ -1,0 +1,8 @@
+# errors
+
+Application error types and stable numeric codes for `{{ .Name }}`.
+
+- `errors.go` — `AppError` type: wraps an HTTP status, a stable numeric code, and a human message
+- `codes.go` — catalog of all `AppError` sentinel values used across the codebase
+
+**Convention**: use `errors.ErrXxx` constants in service and repository code; the error middleware translates them to JSON responses at the HTTP boundary.

@@ -1,0 +1,48 @@
+package middleware
+
+import (
+	stdlibErrors "errors"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+
+	apperrors "{{ .Module }}/errors"
+)
+
+// ErrorHandler returns a fiber.ErrorHandler that maps AppError values
+// into structured JSON responses.
+func ErrorHandler(logger *zap.Logger) func(*fiber.Ctx, error) error {
+	return func(c *fiber.Ctx, err error) error {
+		traceID, _ := c.Locals("trace_id").(string)
+
+		var ae apperrors.AppError
+		if stdlibErrors.As(err, &ae) {
+			return c.Status(ae.StatusCode).JSON(map[string]any{
+				"error":    true,
+				"code":     ae.Code,
+				"name":     ae.Name,
+				"message":  ae.Message,
+				"trace_id": traceID,
+			})
+		}
+
+		var fe *fiber.Error
+		if stdlibErrors.As(err, &fe) {
+			return c.Status(fe.Code).JSON(map[string]any{
+				"error":    true,
+				"code":     fe.Code,
+				"message":  fe.Message,
+				"trace_id": traceID,
+			})
+		}
+
+		logger.Error("unhandled error", zap.Error(err), zap.String("trace_id", traceID))
+		return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
+			"error":    true,
+			"code":     apperrors.ErrInternal.Code,
+			"name":     apperrors.ErrInternal.Name,
+			"message":  apperrors.ErrInternal.Message,
+			"trace_id": traceID,
+		})
+	}
+}

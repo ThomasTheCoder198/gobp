@@ -1,0 +1,8 @@
+id: fiber
+kind: framework
+display: Fiber
+description: gofiber/fiber HTTP framework
+go_imports:
+  - github.com/gofiber/fiber/v2
+go_requires:
+  - github.com/gofiber/fiber/v2

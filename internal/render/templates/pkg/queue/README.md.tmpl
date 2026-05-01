@@ -1,0 +1,8 @@
+# pkg/queue
+
+Message queue producer and consumer for `{{ .Name }}`.
+
+- `producer.go` — publishes messages to the broker
+- `consumer.go` — subscribes to a topic and dispatches messages to handlers
+
+Configure the broker connection in `pkg/config/config.go` and wire the client in `cmd/worker/main.go`.

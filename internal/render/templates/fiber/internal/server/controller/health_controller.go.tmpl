@@ -1,0 +1,25 @@
+package controller
+
+import (
+	"github.com/gofiber/fiber/v2"
+)
+
+// HealthController serves the /healthz liveness check.
+type HealthController struct{}
+
+// NewHealthController is the Wire provider.
+func NewHealthController() *HealthController { return &HealthController{} }
+
+// Register attaches the controller's routes to the given router.
+func (h *HealthController) Register(r fiber.Router) {
+	r.Get("/healthz", h.Health)
+}
+
+// Health returns 200 with a small status payload, including trace_id from context.
+func (h *HealthController) Health(c *fiber.Ctx) error {
+	traceID, _ := c.Locals("trace_id").(string)
+	return c.JSON(map[string]any{
+		"status":   "ok",
+		"trace_id": traceID,
+	})
+}

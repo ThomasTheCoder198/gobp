@@ -1,0 +1,5 @@
+# internal/server/infrastructure/openai
+
+OpenAI SDK adapter for `{{ .Name }}`.
+
+Wraps the OpenAI Go client and exposes a narrow interface to the rest of the application. The API key is loaded from `config.OpenAIConfig` (sourced from `OPENAI_API_KEY` in `.env`).

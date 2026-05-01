@@ -1,0 +1,21 @@
+// Package cassandra exposes a single *gocql.Session builder.
+package cassandra
+
+import (
+	"fmt"
+
+	"github.com/gocql/gocql"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// New builds the cluster and creates a session. Caller owns session.Close().
+func New(cfg config.CassandraConfig) (*gocql.Session, error) {
+	cluster := gocql.NewCluster(cfg.Hosts...)
+	cluster.Keyspace = cfg.Keyspace
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, fmt.Errorf("create session: %w", err)
+	}
+	return session, nil
+}

@@ -1,0 +1,7 @@
+# pkg/database/postgres
+
+pgxpool connection builder for `{{ .Name }}`.
+
+`New(ctx, cfg)` accepts a `config.PostgresConfig` and returns a ready-to-use `*pgxpool.Pool`. It performs a ping on startup to fail fast on misconfiguration. Caller is responsible for calling `pool.Close()` on shutdown.
+
+Connection values come from `config.yaml` (host, port, pool size) and `.env` (user, password, database name).

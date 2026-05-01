@@ -1,0 +1,9 @@
+id: zap
+kind: logger
+display: zap
+description: uber-go/zap structured logger (always-on; this manifest is informational)
+go_imports:
+  - go.uber.org/zap
+  - go.uber.org/zap/zapcore
+go_requires:
+  - go.uber.org/zap

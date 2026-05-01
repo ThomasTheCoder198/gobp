@@ -1,0 +1,39 @@
+package middleware
+
+import (
+	stdlibErrors "errors"
+
+	"github.com/gin-gonic/gin"
+
+	apperrors "{{ .Module }}/errors"
+)
+
+// ErrorMapper turns AppError values pushed onto c.Errors into a JSON response.
+//
+// Wire format: {"error": true, "code": 400000, "name": "ErrBadRequest",
+// "message": "...", "trace_id": "..."}.
+//
+// Anything that isn't an AppError falls through to ErrInternal.
+func ErrorMapper() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		if len(c.Errors) == 0 {
+			return
+		}
+		err := c.Errors.Last().Err
+
+		var ae apperrors.AppError
+		if !stdlibErrors.As(err, &ae) {
+			ae = apperrors.ErrInternal
+		}
+
+		c.AbortWithStatusJSON(ae.StatusCode, gin.H{
+			"error":    true,
+			"code":     ae.Code,
+			"name":     ae.Name,
+			"message":  ae.Message,
+			"trace_id": c.GetString("trace_id"),
+		})
+	}
+}

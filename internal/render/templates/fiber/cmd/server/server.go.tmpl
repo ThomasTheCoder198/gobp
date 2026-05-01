@@ -1,0 +1,108 @@
+package main
+
+import (
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+
+	"{{ .Module }}/internal/server/middleware"
+)
+
+// Server wraps the Wire-injected App and provides centralised route
+// registration. Add new controllers to App (via wire.go) and register
+// their routes in RegisterRoutes.
+type Server struct {
+	app    *App
+	logger *zap.Logger
+}
+
+// NewServer creates a ready-to-use Server.
+func NewServer(app *App, logger *zap.Logger) *Server {
+	return &Server{app: app, logger: logger}
+}
+
+// RegisterRoutes attaches all middleware and route groups to the Fiber app.
+func (s *Server) RegisterRoutes(f *fiber.App) {
+	// CORS must be first to handle OPTIONS preflight before auth/tracing hits.
+	// Pass allowed origins explicitly in production: middleware.CORS("https://example.com")
+	f.Use(middleware.CORS())
+	f.Use(middleware.TraceID())
+	f.Use(middleware.AccessLog(s.logger))
+	f.Use(middleware.Recovery(s.logger))
+
+	api := f.Group("")
+	s.app.Health.Register(api)
+{{- if .Websocket }}
+	s.app.WS.Register(api)
+{{- end }}
+
+	// ----------------------------------------------------------------
+	// Example: route groups with layered architecture
+	// ----------------------------------------------------------------
+	//
+	// v1 := f.Group("/api/v1")
+	// {
+	//     // Public routes (no auth middleware)
+	//     v1.Post("/auth/login", s.app.Auth.Login)
+	//     v1.Post("/auth/register", s.app.Auth.Register)
+	//
+	//     // Protected routes
+	//     authorized := v1.Group("", middleware.Auth())
+	//     {
+	//         users := authorized.Group("/users")
+	//         {
+	//             users.Get("", s.app.User.List)
+	//             users.Get("/:id", s.app.User.GetByID)
+	//             users.Post("", s.app.User.Create)
+	//             users.Put("/:id", s.app.User.Update)
+	//             users.Delete("/:id", s.app.User.Delete)
+	//         }
+	//     }
+	// }
+	//
+	// ----------------------------------------------------------------
+	// Layered architecture reference
+	// ----------------------------------------------------------------
+	//
+	// Controller — depends on service interface, handles HTTP concerns only.
+	//
+	//   // internal/server/controller/user_controller.go
+	//   type UserController struct {
+	//       svc service.UserService
+	//   }
+	//
+	//   func NewUserController(svc service.UserService) *UserController {
+	//       return &UserController{svc: svc}
+	//   }
+	//
+	//   func (c *UserController) List(ctx *fiber.Ctx) error {
+	//       users, err := c.svc.List(ctx.UserContext())
+	//       if err != nil { ... }
+	//       return ctx.JSON(utils.Success(users))
+	//   }
+	//
+	// Service — business logic, depends on repository interface.
+	//
+	//   // internal/server/service/user_service.go
+	//   type UserService interface {
+	//       List(ctx context.Context) ([]entity.User, error)
+	//       GetByID(ctx context.Context, id string) (*entity.User, error)
+	//       Create(ctx context.Context, req dto.CreateUserRequest) (*entity.User, error)
+	//   }
+	//
+	// Repository — data access, depends on database driver.
+	//
+	//   // internal/server/repository/user_repository.go
+	//   type UserRepository interface {
+	//       FindAll(ctx context.Context) ([]entity.User, error)
+	//       FindByID(ctx context.Context, id string) (*entity.User, error)
+	//       Insert(ctx context.Context, u *entity.User) error
+	//   }
+	//
+	// Wire it up in wire.go:
+	//   wire.Build(
+	//       controller.NewUserController,
+	//       service.NewUserServiceImpl,
+	//       repository.NewUserRepositoryImpl,
+	//       ...
+	//   )
+}

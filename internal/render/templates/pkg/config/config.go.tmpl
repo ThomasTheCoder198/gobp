@@ -1,0 +1,187 @@
+// Package config loads typed configuration from config.yaml plus .env.
+//
+// Layering rules:
+//   - config.yaml holds non-secret structural defaults (ports, pool sizes, log level).
+//   - .env holds credentials and machine-specific overrides.
+//   - Env vars always win over yaml. Bind explicit env keys per field below.
+package config
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
+)
+
+// Config is the project's typed configuration root.
+type Config struct {
+	Server ServerConfig {{ "`mapstructure:\"server\"`" }}
+	Log    LogConfig    {{ "`mapstructure:\"log\"`" }}
+{{ if .HasDB.postgres }}	Postgres PostgresConfig {{ "`mapstructure:\"postgres\"`" }}{{ end }}
+{{ if .HasDB.mysql }}	MySQL    MySQLConfig    {{ "`mapstructure:\"mysql\"`" }}{{ end }}
+{{ if .HasDB.mongo }}	Mongo    MongoConfig    {{ "`mapstructure:\"mongo\"`" }}{{ end }}
+{{ if .HasDB.redis }}	Redis    RedisConfig    {{ "`mapstructure:\"redis\"`" }}{{ end }}
+{{ if .HasDB.sqlite }}	SQLite   SQLiteConfig   {{ "`mapstructure:\"sqlite\"`" }}{{ end }}
+{{ if .HasDB.cassandra }}	Cassandra CassandraConfig {{ "`mapstructure:\"cassandra\"`" }}{{ end }}
+{{ if .HasSDK.openai }}	OpenAI   OpenAIConfig   {{ "`mapstructure:\"openai\"`" }}{{ end }}
+{{ if .HasSDK.stripe }}	Stripe   StripeConfig   {{ "`mapstructure:\"stripe\"`" }}{{ end }}
+{{ if .Websocket }}	Websocket WebsocketConfig {{ "`mapstructure:\"websocket\"`" }}{{ end }}
+}
+
+// ServerConfig holds HTTP server tunables.
+type ServerConfig struct {
+	Port             int {{ "`mapstructure:\"port\"`" }}
+	ReadTimeoutSec   int {{ "`mapstructure:\"read_timeout_sec\"`" }}
+	WriteTimeoutSec  int {{ "`mapstructure:\"write_timeout_sec\"`" }}
+}
+
+// LogConfig holds logger tunables.
+type LogConfig struct {
+	Level    string {{ "`mapstructure:\"level\"`" }}
+	Encoding string {{ "`mapstructure:\"encoding\"`" }}
+}
+
+{{ if .HasDB.postgres }}
+// PostgresConfig holds Postgres connection inputs. Credentials come from env.
+type PostgresConfig struct {
+	Host     string {{ "`mapstructure:\"host\"`" }}
+	Port     int    {{ "`mapstructure:\"port\"`" }}
+	User     string {{ "`mapstructure:\"user\"`" }}
+	Password string {{ "`mapstructure:\"password\"`" }}
+	Database string {{ "`mapstructure:\"database\"`" }}
+	PoolMax  int    {{ "`mapstructure:\"pool_max\"`" }}
+}
+{{ end }}
+
+{{ if .HasDB.mysql }}
+type MySQLConfig struct {
+	Host     string {{ "`mapstructure:\"host\"`" }}
+	Port     int    {{ "`mapstructure:\"port\"`" }}
+	User     string {{ "`mapstructure:\"user\"`" }}
+	Password string {{ "`mapstructure:\"password\"`" }}
+	Database string {{ "`mapstructure:\"database\"`" }}
+}
+{{ end }}
+
+{{ if .HasDB.mongo }}
+type MongoConfig struct {
+	URI      string {{ "`mapstructure:\"uri\"`" }}
+	Database string {{ "`mapstructure:\"database\"`" }}
+}
+{{ end }}
+
+{{ if .HasDB.redis }}
+type RedisConfig struct {
+	Addr     string {{ "`mapstructure:\"addr\"`" }}
+	Password string {{ "`mapstructure:\"password\"`" }}
+	DB       int    {{ "`mapstructure:\"db\"`" }}
+}
+{{ end }}
+
+{{ if .HasDB.sqlite }}
+type SQLiteConfig struct {
+	Path string {{ "`mapstructure:\"path\"`" }}
+}
+{{ end }}
+
+{{ if .HasDB.cassandra }}
+type CassandraConfig struct {
+	Hosts    []string {{ "`mapstructure:\"hosts\"`" }}
+	Keyspace string   {{ "`mapstructure:\"keyspace\"`" }}
+}
+{{ end }}
+
+{{ if .HasSDK.openai }}
+type OpenAIConfig struct {
+	APIKey string {{ "`mapstructure:\"api_key\"`" }}
+}
+{{ end }}
+
+{{ if .HasSDK.stripe }}
+type StripeConfig struct {
+	APIKey string {{ "`mapstructure:\"api_key\"`" }}
+}
+{{ end }}
+
+{{ if .Websocket }}
+type WebsocketConfig struct {
+	ReadBufferSize  int {{ "`mapstructure:\"read_buffer_size\"`" }}
+	WriteBufferSize int {{ "`mapstructure:\"write_buffer_size\"`" }}
+	PingIntervalSec int {{ "`mapstructure:\"ping_interval_sec\"`" }}
+}
+{{ end }}
+
+// Load reads config.yaml from the standard search paths plus environment
+// overrides bound from .env. Env vars use UPPER_SNAKE form and dot→underscore
+// path mapping (e.g. postgres.host → POSTGRES_HOST).
+func Load() (*Config, error) {
+	// Best-effort .env load — missing file is not fatal.
+	_ = godotenv.Load()
+
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(".")
+	v.AddConfigPath("./pkg/config")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	bindEnv(v)
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("read config: %w", err)
+	}
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("unmarshal config: %w", err)
+	}
+	return &cfg, nil
+}
+
+// MustLoad calls Load and panics on error. Use only at startup.
+func MustLoad() *Config {
+	cfg, err := Load()
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
+// bindEnv wires explicit env-var → config-key mappings so credentials in .env
+// overwrite the structural defaults from config.yaml.
+func bindEnv(v *viper.Viper) {
+{{ if .HasDB.postgres -}}
+	_ = v.BindEnv("postgres.host", "POSTGRES_HOST")
+	_ = v.BindEnv("postgres.port", "POSTGRES_PORT")
+	_ = v.BindEnv("postgres.user", "POSTGRES_USER")
+	_ = v.BindEnv("postgres.password", "POSTGRES_PASSWORD")
+	_ = v.BindEnv("postgres.database", "POSTGRES_DB")
+{{ end -}}
+{{ if .HasDB.mysql -}}
+	_ = v.BindEnv("mysql.host", "MYSQL_HOST")
+	_ = v.BindEnv("mysql.port", "MYSQL_PORT")
+	_ = v.BindEnv("mysql.user", "MYSQL_USER")
+	_ = v.BindEnv("mysql.password", "MYSQL_PASSWORD")
+	_ = v.BindEnv("mysql.database", "MYSQL_DB")
+{{ end -}}
+{{ if .HasDB.mongo -}}
+	_ = v.BindEnv("mongo.uri", "MONGO_URI")
+	_ = v.BindEnv("mongo.database", "MONGO_DB")
+{{ end -}}
+{{ if .HasDB.redis -}}
+	_ = v.BindEnv("redis.addr", "REDIS_ADDR")
+	_ = v.BindEnv("redis.password", "REDIS_PASSWORD")
+{{ end -}}
+{{ if .HasDB.cassandra -}}
+	_ = v.BindEnv("cassandra.hosts", "CASSANDRA_HOSTS")
+	_ = v.BindEnv("cassandra.keyspace", "CASSANDRA_KEYSPACE")
+{{ end -}}
+{{ if .HasSDK.openai -}}
+	_ = v.BindEnv("openai.api_key", "OPENAI_API_KEY")
+{{ end -}}
+{{ if .HasSDK.stripe -}}
+	_ = v.BindEnv("stripe.api_key", "STRIPE_API_KEY")
+{{ end -}}
+}

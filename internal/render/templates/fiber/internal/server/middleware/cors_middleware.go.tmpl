@@ -1,0 +1,57 @@
+package middleware
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+// CORS returns middleware that adds CORS response headers.
+//
+// Pass explicit origins in production:
+//
+//	f.Use(middleware.CORS("https://app.example.com", "https://admin.example.com"))
+//
+// Wildcard "*" (default) is convenient for development but should not be used
+// in production when credentials (cookies, auth headers) are involved.
+func CORS(allowedOrigins ...string) fiber.Handler {
+	origins := allowedOrigins
+	if len(origins) == 0 {
+		origins = []string{"*"}
+	}
+	const (
+		methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		headers = "Origin, Content-Type, Accept, Authorization, X-Trace-Id"
+	)
+	return func(c *fiber.Ctx) error {
+		origin := c.Get("Origin")
+		matched := matchAllowedOrigin(origin, origins)
+		if matched != "" {
+			c.Set("Access-Control-Allow-Origin", matched)
+			if matched != "*" {
+				c.Set("Vary", "Origin")
+			}
+		}
+		c.Set("Access-Control-Allow-Methods", methods)
+		c.Set("Access-Control-Allow-Headers", headers)
+		c.Set("Access-Control-Max-Age", "86400")
+
+		if c.Method() == http.MethodOptions {
+			return c.SendStatus(http.StatusNoContent)
+		}
+		return c.Next()
+	}
+}
+
+func matchAllowedOrigin(origin string, allowed []string) string {
+	for _, o := range allowed {
+		if o == "*" {
+			return "*"
+		}
+		if strings.EqualFold(o, origin) {
+			return origin
+		}
+	}
+	return ""
+}

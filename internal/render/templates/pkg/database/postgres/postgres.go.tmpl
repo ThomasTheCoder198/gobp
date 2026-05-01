@@ -1,0 +1,41 @@
+// Package postgres exposes a single pgxpool.Pool builder. No queries, no
+// helpers — write those next to your repository code.
+package postgres
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// DSN returns a libpq-style connection string from cfg.
+func DSN(cfg config.PostgresConfig) string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database,
+	)
+}
+
+// New opens a pool and pings it once to validate connectivity. Caller owns
+// pool.Close() (wire as a cleanup func).
+func New(ctx context.Context, cfg config.PostgresConfig) (*pgxpool.Pool, error) {
+	poolCfg, err := pgxpool.ParseConfig(DSN(cfg))
+	if err != nil {
+		return nil, fmt.Errorf("parse dsn: %w", err)
+	}
+	if cfg.PoolMax > 0 {
+		poolCfg.MaxConns = int32(cfg.PoolMax)
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		return nil, fmt.Errorf("new pool: %w", err)
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+	return pool, nil
+}

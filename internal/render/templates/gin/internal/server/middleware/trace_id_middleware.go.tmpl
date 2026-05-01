@@ -1,0 +1,25 @@
+// Package middleware holds the standard HTTP middleware chain:
+// trace_id → access log → recovery → error mapper.
+package middleware
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+// TraceIDHeader is the inbound/outbound header name for request correlation.
+const TraceIDHeader = "X-Trace-Id"
+
+// TraceID injects a UUID v4 trace_id into the gin context and response header.
+// Honors an inbound X-Trace-Id header if present and well-formed.
+func TraceID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.GetHeader(TraceIDHeader)
+		if _, err := uuid.Parse(id); err != nil || id == "" {
+			id = uuid.New().String()
+		}
+		c.Set("trace_id", id)
+		c.Writer.Header().Set(TraceIDHeader, id)
+		c.Next()
+	}
+}

@@ -1,0 +1,8 @@
+id: echo
+kind: framework
+display: Echo
+description: labstack/echo HTTP framework
+go_imports:
+  - github.com/labstack/echo/v4
+go_requires:
+  - github.com/labstack/echo/v4

@@ -1,0 +1,4 @@
+id: compose
+kind: addon
+display: docker-compose
+description: docker-compose.yml assembled from selected DB stanzas (auto-on when any DB selected)

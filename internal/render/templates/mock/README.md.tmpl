@@ -1,0 +1,13 @@
+# mock
+
+Mock implementations for `{{ .Name }}` tests.
+
+Place generated or hand-written mocks here. Recommended tools:
+
+- `mockgen` (from `go.uber.org/mock`) — generate from interfaces in `internal/server/service` and `internal/server/repository`
+- `moq` — lightweight alternative with struct-based mocks
+
+Example:
+```
+mockgen -source=internal/server/service/user_service.go -destination=mock/user_service_mock.go
+```

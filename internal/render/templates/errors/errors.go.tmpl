@@ -1,0 +1,31 @@
+// Package errors holds the project's typed error catalog.
+//
+// AppError carries a stable numeric code that the frontend matches against,
+// plus an HTTP status, a user-facing message, and an internal description.
+// Wire-format JSON: {"error": true, "code": 400000, "message": "...", "trace_id": "..."}
+package errors
+
+// AppError is the canonical error type for handlers and services.
+type AppError struct {
+	Name          string
+	ErrorIndicate bool
+	Code          int
+	StatusCode    int
+	Message       string
+	Description   string
+}
+
+// NewAppError builds an AppError. All fields are required.
+func NewAppError(code int, name string, status int, message string, description string) AppError {
+	return AppError{
+		Name:          name,
+		ErrorIndicate: true,
+		Code:          code,
+		StatusCode:    status,
+		Message:       message,
+		Description:   description,
+	}
+}
+
+// Error implements the error interface using the internal name.
+func (e AppError) Error() string { return e.Name }

@@ -1,0 +1,7 @@
+# cmd/server
+
+HTTP server entry point for `{{ .Name }}`.
+
+- `main.go` — loads config, initialises the logger, wires dependencies, and starts the server
+- `server.go` — route registration and graceful-shutdown lifecycle
+- `wire.go` / `wire_gen.go` — compile-time dependency injection (regenerate with `make wire`)

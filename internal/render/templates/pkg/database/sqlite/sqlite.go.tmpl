@@ -1,0 +1,20 @@
+// Package sqlite exposes a gorm-backed SQLite connection.
+package sqlite
+
+import (
+	"fmt"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
+	"{{ .Module }}/pkg/config"
+)
+
+// New opens the database file.
+func New(cfg config.SQLiteConfig) (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open(cfg.Path), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("open: %w", err)
+	}
+	return db, nil
+}

@@ -1,0 +1,80 @@
+package utils
+
+import (
+	"errors"
+	"reflect"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
+)
+
+// validate is the singleton validator, initialised once at package load.
+var validate = func() *validator.Validate {
+	v := validator.New()
+	// Use JSON field names in validation errors instead of Go struct field names.
+	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+	return v
+}()
+
+// Validate runs struct validation and returns a field→message map.
+// Returns nil when v is valid.
+//
+// Usage in a controller:
+//
+//	var req dto.CreateUserRequest
+//	if err := ctx.ShouldBindJSON(&req); err != nil { ... }
+//	if errs := utils.Validate(req); errs != nil {
+//	    ctx.JSON(http.StatusUnprocessableEntity, errs)
+//	    return
+//	}
+func Validate(v any) map[string]string {
+	if err := validate.Struct(v); err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			out := make(map[string]string, len(ve))
+			for _, e := range ve {
+				out[e.Field()] = validationMsg(e)
+			}
+			return out
+		}
+	}
+	return nil
+}
+
+// ValidateVar validates a single value against a tag string, e.g. "required,email".
+func ValidateVar(v any, tag string) error {
+	return validate.Var(v, tag)
+}
+
+func validationMsg(e validator.FieldError) string {
+	switch e.Tag() {
+	case "required":
+		return "is required"
+	case "email":
+		return "must be a valid email address"
+	case "min":
+		return "must be at least " + e.Param()
+	case "max":
+		return "must be at most " + e.Param()
+	case "len":
+		return "must be exactly " + e.Param() + " characters"
+	case "uuid", "uuid4":
+		return "must be a valid UUID"
+	case "url":
+		return "must be a valid URL"
+	case "oneof":
+		return "must be one of: " + e.Param()
+	case "gte":
+		return "must be >= " + e.Param()
+	case "lte":
+		return "must be <= " + e.Param()
+	default:
+		return e.Tag() + " validation failed"
+	}
+}

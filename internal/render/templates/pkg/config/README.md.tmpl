@@ -1,0 +1,9 @@
+# pkg/config
+
+Viper-backed typed configuration for `{{ .Name }}`.
+
+- `config.go` — `Config` root struct with all sub-configs, `Load()` and `MustLoad()` helpers
+- `config.yaml` (project root) — non-secret structural defaults: ports, pool sizes, log level
+
+**Layering order** (later wins): `config.yaml` → `.env` file → OS environment variables.
+Credentials must live in `.env`, never in `config.yaml`.

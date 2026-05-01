@@ -1,0 +1,15 @@
+id: openai
+kind: sdk
+display: OpenAI
+description: OpenAI client wrapper (sashabaranov/go-openai)
+go_imports:
+  - github.com/sashabaranov/go-openai
+go_requires:
+  - github.com/sashabaranov/go-openai
+config:
+  - key: openai
+    type: OpenAIConfig
+    fields:
+      api_key: { type: string, default: "", secret: true }
+env_overrides:
+  - { env: OPENAI_API_KEY, key: openai.api_key }
